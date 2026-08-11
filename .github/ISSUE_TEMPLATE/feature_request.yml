@@ -1,0 +1,27 @@
+name: Feature request
+description: Propose a focused extension to the local-first compiler
+title: "[feature] "
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem to solve
+      description: Describe the workflow pain, not only the preferred implementation.
+    validations:
+      required: true
+  - type: textarea
+    id: boundary
+    attributes:
+      label: Proposed behavior and preservation boundary
+      description: Explain what may change in the native template and what must remain untouched.
+    validations:
+      required: true
+  - type: dropdown
+    id: scope
+    attributes:
+      label: Current POC scope?
+      options: [Yes, Unsure, No — future roadmap]
+    validations:
+      required: true
+

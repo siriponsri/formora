@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 640" role="img" aria-labelledby="title desc">
+  <title id="title">Formora social preview</title>
+  <desc id="desc">Native templates, intelligent content. A local-first template-preserving document AI compiler.</desc>
+  <defs>
+    <linearGradient id="bg" x1="80" y1="30" x2="1190" y2="620" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#111827"/>
+      <stop offset=".52" stop-color="#1E1B4B"/>
+      <stop offset="1" stop-color="#172554"/>
+    </linearGradient>
+    <linearGradient id="paper" x1="850" y1="110" x2="1130" y2="540" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#8B5CF6"/>
+      <stop offset="1" stop-color="#2563EB"/>
+    </linearGradient>
+    <linearGradient id="spark" x1="1050" y1="80" x2="1160" y2="205" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#67E8F9"/>
+      <stop offset="1" stop-color="#2DD4BF"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0" cy="0" r="1" gradientTransform="translate(1090 110) rotate(115) scale(440 570)" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#6366F1" stop-opacity=".55"/>
+      <stop offset="1" stop-color="#6366F1" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="shadow" x="-30%" y="-30%" width="160%" height="170%">
+      <feDropShadow dx="0" dy="26" stdDeviation="25" flood-color="#020617" flood-opacity=".4"/>
+    </filter>
+  </defs>
+  <rect width="1280" height="640" rx="30" fill="url(#bg)"/>
+  <rect width="1280" height="640" rx="30" fill="url(#glow)"/>
+  <g opacity=".12" fill="#C7D2FE">
+    <circle cx="116" cy="92" r="4"/><circle cx="168" cy="92" r="4"/><circle cx="220" cy="92" r="4"/>
+    <circle cx="116" cy="144" r="4"/><circle cx="168" cy="144" r="4"/><circle cx="220" cy="144" r="4"/>
+    <circle cx="116" cy="196" r="4"/><circle cx="168" cy="196" r="4"/><circle cx="220" cy="196" r="4"/>
+  </g>
+  <g transform="translate(92 74)">
+    <rect width="64" height="64" rx="17" fill="#F8FAFC"/>
+    <path d="M14 19c0-3 2-5 5-5h23l9 9v29c0 3-2 5-5 5H19c-3 0-5-2-5-5V19Z" fill="url(#paper)"/>
+    <path d="M42 14v10h10" fill="#A5B4FC"/>
+    <path d="M23 30h17M23 38h13M23 46h17" fill="none" stroke="white" stroke-width="3.5" stroke-linecap="round"/>
+  </g>
+  <text x="176" y="122" fill="#F8FAFC" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="45" font-weight="760" letter-spacing="-1.5">formora</text>
+  <text x="92" y="271" fill="#FFFFFF" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="72" font-weight="780" letter-spacing="-3">Native templates.</text>
+  <text x="92" y="352" fill="#A5B4FC" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="72" font-weight="780" letter-spacing="-3">Intelligent content.</text>
+  <text x="96" y="410" fill="#CBD5E1" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="23" font-weight="450">Template-preserving document AI for editable DOCX and XLSX.</text>
+  <g font-family="Inter,Segoe UI,Arial,sans-serif" font-size="18" font-weight="650">
+    <rect x="92" y="468" width="116" height="47" rx="23" fill="#312E81" stroke="#6366F1"/>
+    <text x="121" y="498" fill="#E0E7FF">DOCX</text>
+    <rect x="222" y="468" width="112" height="47" rx="23" fill="#134E4A" stroke="#2DD4BF"/>
+    <text x="251" y="498" fill="#CCFBF1">XLSX</text>
+    <rect x="348" y="468" width="164" height="47" rx="23" fill="#1E293B" stroke="#64748B"/>
+    <text x="378" y="498" fill="#E2E8F0">LOCAL-FIRST</text>
+  </g>
+  <g filter="url(#shadow)">
+    <path d="M872 157c0-18 14-32 32-32h170l78 78v304c0 19-15 34-34 34H904c-18 0-32-15-32-33V157Z" fill="#C7D2FE" opacity=".4" transform="translate(28 24)"/>
+    <path d="M826 180c0-20 16-36 36-36h174l83 83v279c0 21-17 38-38 38H862c-20 0-36-17-36-37V180Z" fill="url(#paper)"/>
+    <path d="M1036 144v84h83" fill="#A5B4FC" opacity=".82"/>
+    <path d="M895 274h142M895 329h108M895 384h142M895 439h124" fill="none" stroke="white" stroke-width="22" stroke-linecap="round" opacity=".93"/>
+  </g>
+  <path d="m1138 80 13 36 36 13-36 13-13 36-13-36-36-13 36-13 13-36Z" fill="url(#spark)"/>
+</svg>

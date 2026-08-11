@@ -1,0 +1,45 @@
+# Secrets and local configuration
+.env
+.env.local
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+.venv/
+venv/
+*.egg-info/
+
+# Node / Next.js
+node_modules/
+.next/
+out/
+npm-debug.log*
+
+# Local application state
+data/*
+!data/.gitkeep
+!data/uploads/.gitkeep
+!data/templates/.gitkeep
+!data/generated/.gitkeep
+!data/previews/.gitkeep
+*.db
+*.db-shm
+*.db-wal
+
+# Generated previews and Office lock files
+~$*
+*.tmp
+
+# Editors and operating systems
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+

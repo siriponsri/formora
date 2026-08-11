@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 128" role="img" aria-labelledby="title desc">
+  <title id="title">Formora</title>
+  <desc id="desc">Formora logo and the words native templates, intelligent content.</desc>
+  <defs>
+    <linearGradient id="paper" x1="20" y1="14" x2="108" y2="116" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#7C3AED"/>
+      <stop offset="1" stop-color="#2563EB"/>
+    </linearGradient>
+    <linearGradient id="spark" x1="78" y1="20" x2="109" y2="50" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#67E8F9"/>
+      <stop offset="1" stop-color="#2DD4BF"/>
+    </linearGradient>
+  </defs>
+  <g transform="translate(2)">
+    <rect width="128" height="128" rx="30" fill="#F8FAFC"/>
+    <path d="M35 26c0-5 4-9 9-9h39l17 17v65c0 6-4 10-10 10H44c-5 0-9-4-9-9V26Z" fill="#C7D2FE" opacity=".65"/>
+    <path d="M27 34c0-6 4-10 10-10h39l18 18v57c0 6-5 11-11 11H37c-6 0-10-5-10-11V34Z" fill="url(#paper)"/>
+    <path d="M76 24v18h18" fill="#A5B4FC" opacity=".9"/>
+    <path d="M44 52h31M44 66h24M44 80h31" fill="none" stroke="white" stroke-width="7" stroke-linecap="round"/>
+    <path d="m101 18 3.3 8.7L113 30l-8.7 3.3L101 42l-3.3-8.7L89 30l8.7-3.3L101 18Z" fill="url(#spark)"/>
+  </g>
+  <text x="154" y="70" fill="#0F172A" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="58" font-weight="750" letter-spacing="-2">formora</text>
+  <text x="158" y="99" fill="#64748B" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="17" font-weight="500" letter-spacing=".5">NATIVE TEMPLATES · INTELLIGENT CONTENT</text>
+</svg>
+

@@ -1,0 +1,35 @@
+name: Bug report
+description: Report a reproducible Formora behavior or preservation problem
+title: "[bug] "
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: "Do not attach confidential templates or personal data. Reproduce with a synthetic file."
+  - type: textarea
+    id: summary
+    attributes:
+      label: What happened?
+      description: Include the expected and actual behavior.
+    validations:
+      required: true
+  - type: dropdown
+    id: format
+    attributes:
+      label: Template format
+      options: [DOCX, XLSX, Not format-specific]
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction steps
+      placeholder: "1. Upload…\n2. Analyze…\n3. Render…"
+    validations:
+      required: true
+  - type: textarea
+    id: preservation
+    attributes:
+      label: Native property affected
+      description: Page setup, style, header/footer, merge, formula, print area, etc.
+

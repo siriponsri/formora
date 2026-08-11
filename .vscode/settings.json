@@ -1,0 +1,6 @@
+{
+  "editor.formatOnSave": true,
+  "files.encoding": "utf8",
+  "python.defaultInterpreterPath": "${workspaceFolder}\\.venv\\Scripts\\python.exe",
+  "typescript.tsdk": "apps/web/node_modules/typescript/lib"
+}
