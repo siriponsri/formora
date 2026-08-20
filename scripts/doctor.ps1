@@ -8,16 +8,16 @@ $PythonPath = Join-Path $RepoRoot ".venv\Scripts\python.exe"
 $HasRequiredFailure = $false
 
 function Required-Check([string]$Name, [bool]$Passed, [string]$Details) {
-    if ($Passed) { Write-Host "[required:ok] $Name — $Details" -ForegroundColor Green }
+    if ($Passed) { Write-Host "[required:ok] $Name - $Details" -ForegroundColor Green }
     else {
-        Write-Host "[required:fail] $Name — $Details" -ForegroundColor Red
+        Write-Host "[required:fail] $Name - $Details" -ForegroundColor Red
         $script:HasRequiredFailure = $true
     }
 }
 
 function Optional-Check([string]$Name, [bool]$Passed, [string]$Details) {
-    if ($Passed) { Write-Host "[optional:ok] $Name — $Details" -ForegroundColor Green }
-    else { Write-Host "[optional:missing] $Name — $Details" -ForegroundColor Yellow }
+    if ($Passed) { Write-Host "[optional:ok] $Name - $Details" -ForegroundColor Green }
+    else { Write-Host "[optional:missing] $Name - $Details" -ForegroundColor Yellow }
 }
 
 Write-Host "`nFormora doctor`n" -ForegroundColor Cyan
