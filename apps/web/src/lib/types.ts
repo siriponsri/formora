@@ -1,11 +1,23 @@
 export type FileType = "docx" | "xlsx";
-export type BindingStrategy = "placeholder" | "cell";
+export type BindingStrategy = "placeholder" | "cell" | "docx_block";
+
+export interface CandidateProposal {
+  field_id: string;
+  label: string;
+  block_id: string;
+  anchor: string;
+  confidence: number;
+  source_text: string;
+}
 
 export interface TemplateBinding {
   strategy: BindingStrategy;
   placeholder?: string | null;
   cell?: string | null;
   sheet?: string | null;
+  block_id?: string | null;
+  anchor?: string | null;
+  mode?: string | null;
 }
 
 export interface TemplateField {

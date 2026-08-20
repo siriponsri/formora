@@ -15,6 +15,7 @@ class FileType(StrEnum):
 class BindingStrategy(StrEnum):
     PLACEHOLDER = "placeholder"
     CELL = "cell"
+    DOCX_BLOCK = "docx_block"
 
 
 class TemplateBinding(BaseModel):
@@ -22,6 +23,9 @@ class TemplateBinding(BaseModel):
     placeholder: str | None = None
     cell: str | None = None
     sheet: str | None = None
+    block_id: str | None = None
+    anchor: str | None = None
+    mode: str | None = None
 
     @model_validator(mode="after")
     def validate_strategy_payload(self) -> TemplateBinding:
@@ -29,6 +33,13 @@ class TemplateBinding(BaseModel):
             raise ValueError("placeholder binding requires a placeholder value")
         if self.strategy == BindingStrategy.CELL and not self.cell:
             raise ValueError("cell binding requires a cell coordinate")
+        if self.strategy == BindingStrategy.DOCX_BLOCK:
+            if not self.block_id:
+                raise ValueError("docx_block binding requires a block_id")
+            if not self.anchor:
+                raise ValueError("docx_block binding requires an anchor")
+            if self.mode != "after_anchor":
+                raise ValueError("docx_block binding requires mode='after_anchor'")
         return self
 
 

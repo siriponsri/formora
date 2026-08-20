@@ -13,6 +13,7 @@ class FieldCandidate(TypedDict):
     block_id: str
     anchor: str
     confidence: float
+    source_text: str
 
 
 _ANCHORS: tuple[tuple[str, str], ...] = (
@@ -50,7 +51,7 @@ def _iter_table_paragraphs(table: dict[str, Any]) -> Iterator[dict[str, Any]]:
                 yield from _iter_table_paragraphs(nested_table)
 
 
-def _iter_paragraphs(document_map: dict[str, Any]) -> Iterator[dict[str, Any]]:
+def iter_document_paragraphs(document_map: dict[str, Any]) -> Iterator[dict[str, Any]]:
     yield from document_map.get("paragraphs", [])
     for table in document_map.get("tables", []):
         yield from _iter_table_paragraphs(table)
@@ -59,6 +60,23 @@ def _iter_paragraphs(document_map: dict[str, Any]) -> Iterator[dict[str, Any]]:
             yield from story.get("paragraphs", [])
             for table in story.get("tables", []):
                 yield from _iter_table_paragraphs(table)
+
+
+def document_block_map(document_map: dict[str, Any]) -> dict[str, dict[str, Any]]:
+    return {
+        paragraph["block_id"]: paragraph
+        for paragraph in iter_document_paragraphs(document_map)
+        if isinstance(paragraph.get("block_id"), str)
+    }
+
+
+def is_valid_anchor(text: str, anchor: str) -> bool:
+    match = _ANCHOR_PATTERN.match(text)
+    if match is None or match.group(1) != anchor:
+        return False
+    field_id = dict(_ANCHORS)[anchor]
+    value = text[match.end() :].strip(" \t:：,，-–—")
+    return _has_required_evidence(field_id, value)
 
 
 def _has_required_evidence(field_id: str, value: str) -> bool:
@@ -78,7 +96,7 @@ def detect_candidates(document_map: dict[str, Any]) -> list[FieldCandidate]:
 
     candidates: list[FieldCandidate] = []
     anchor_fields = dict(_ANCHORS)
-    for paragraph in _iter_paragraphs(document_map):
+    for paragraph in iter_document_paragraphs(document_map):
         text = paragraph.get("text")
         block_id = paragraph.get("block_id")
         if not isinstance(text, str) or not isinstance(block_id, str):
@@ -98,6 +116,7 @@ def detect_candidates(document_map: dict[str, Any]) -> list[FieldCandidate]:
                 "block_id": block_id,
                 "anchor": label,
                 "confidence": 0.99,
+                "source_text": text,
             }
         )
     return candidates

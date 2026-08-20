@@ -6,7 +6,12 @@ import { useEffect, useMemo, useState } from "react";
 import { AppShell, LoadingState, Notice, StatusPill } from "@/components/app-shell";
 import { SparkIcon } from "@/components/icons";
 import { api } from "@/lib/api";
-import type { TemplateField, TemplateManifest, TemplateRecord } from "@/lib/types";
+import type {
+  CandidateProposal,
+  TemplateField,
+  TemplateManifest,
+  TemplateRecord,
+} from "@/lib/types";
 
 export default function TemplateDetailPage() {
   const params = useParams<{ id: string }>();
@@ -16,6 +21,8 @@ export default function TemplateDetailPage() {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const [proposalDecisions, setProposalDecisions] = useState<Record<string, "accepted" | "rejected">>({});
+  const [proposalMappings, setProposalMappings] = useState<Record<string, string>>({});
 
   useEffect(() => {
     api<TemplateRecord>(`/api/templates/${params.id}`)
@@ -41,6 +48,12 @@ export default function TemplateDetailPage() {
       ["Sheets", Array.isArray(analysis.sheets) ? analysis.sheets.length : 0],
       ["Names", Array.isArray(analysis.sheet_names) ? analysis.sheet_names.join(", ") : "—"],
     ];
+  }, [template]);
+
+  const proposals = useMemo(() => {
+    if (template?.file_type !== "docx" || !template.analysis) return [];
+    const candidates = (template.analysis as { candidates?: unknown }).candidates;
+    return Array.isArray(candidates) ? candidates as CandidateProposal[] : [];
   }, [template]);
 
   function updateField(index: number, patch: Partial<TemplateField>) {
@@ -80,6 +93,56 @@ export default function TemplateDetailPage() {
           binding: { strategy: "cell", cell: "A1", sheet: null },
         };
     setManifest({ ...manifest, fields: [...manifest.fields, field] });
+  }
+
+  function proposalKey(proposal: CandidateProposal) {
+    return `${proposal.block_id}:${proposal.anchor}`;
+  }
+
+  function acceptProposal(proposal: CandidateProposal) {
+    if (!manifest) return;
+    const key = proposalKey(proposal);
+    const fieldId = proposalMappings[key] || proposal.field_id;
+    const field: TemplateField = {
+      id: fieldId,
+      label: proposal.label,
+      required: false,
+      content_type: "short_text",
+      binding: {
+        strategy: "docx_block",
+        block_id: proposal.block_id,
+        anchor: proposal.anchor,
+        mode: "after_anchor",
+      },
+    };
+    setManifest({
+      ...manifest,
+      fields: [
+        ...manifest.fields.filter(
+          (existing) => existing.id !== fieldId && existing.binding.block_id !== proposal.block_id,
+        ),
+        field,
+      ],
+    });
+    setProposalDecisions({ ...proposalDecisions, [key]: "accepted" });
+  }
+
+  function rejectProposal(proposal: CandidateProposal) {
+    setProposalDecisions({ ...proposalDecisions, [proposalKey(proposal)]: "rejected" });
+  }
+
+  function remapProposal(proposal: CandidateProposal, fieldId: string) {
+    if (!manifest) return;
+    const key = proposalKey(proposal);
+    setProposalMappings({ ...proposalMappings, [key]: fieldId });
+    const reviewed = manifest.fields.some((field) => field.binding.block_id === proposal.block_id);
+    if (proposalDecisions[key] !== "accepted" && !reviewed) return;
+    setManifest({
+      ...manifest,
+      fields: manifest.fields.map((field) => (
+        field.binding.block_id === proposal.block_id ? { ...field, id: fieldId } : field
+      )),
+    });
   }
 
   async function save() {
@@ -158,12 +221,22 @@ export default function TemplateDetailPage() {
                     <input className="input" value={field.label} onChange={(event) => updateField(index, { label: event.target.value })} />
                   </label>
                   <label className="label">
-                    {field.binding.strategy === "placeholder" ? "Placeholder" : "Cell coordinate"}
-                    <input
-                      className="input"
-                      value={field.binding.placeholder ?? field.binding.cell ?? ""}
-                      onChange={(event) => updateBinding(index, event.target.value)}
-                    />
+                    {field.binding.strategy === "placeholder"
+                      ? "Placeholder"
+                      : field.binding.strategy === "cell"
+                        ? "Cell coordinate"
+                        : "DOCX block"}
+                    {field.binding.strategy === "docx_block" ? (
+                      <span className="input binding-readonly">
+                        {field.binding.block_id} · {field.binding.anchor}
+                      </span>
+                    ) : (
+                      <input
+                        className="input"
+                        value={field.binding.placeholder ?? field.binding.cell ?? ""}
+                        onChange={(event) => updateBinding(index, event.target.value)}
+                      />
+                    )}
                   </label>
                   <button
                     className="button button-quiet"
@@ -190,6 +263,58 @@ export default function TemplateDetailPage() {
               </div>
             ))}
           </div>
+          {template.file_type === "docx" && proposals.length > 0 && (
+            <div className="proposal-panel">
+              <div className="section-heading">
+                <div>
+                  <h3>Proposed native bindings</h3>
+                  <p>These deterministic suggestions are not saved until you accept them.</p>
+                </div>
+              </div>
+              <div className="field-list">
+                {proposals.map((proposal) => {
+                  const key = proposalKey(proposal);
+                  const decision = proposalDecisions[key];
+                  const accepted = decision === "accepted" || manifest.fields.some(
+                    (field) => field.binding.block_id === proposal.block_id,
+                  );
+                  return (
+                    <div className={`proposal-row${decision ? ` proposal-${decision}` : ""}`} key={key}>
+                      <div className="proposal-source">
+                        <strong>{proposal.label}</strong>
+                        <span>{proposal.source_text}</span>
+                      </div>
+                      <div className="proposal-meta">
+                        <span>Field</span>
+                          <select
+                            className="select"
+                            value={proposalMappings[key] || proposal.field_id}
+                          onChange={(event) => remapProposal(proposal, event.target.value)}
+                        >
+                          {(["subject", "recipient", "date", "document_number"] as const).map((fieldId) => (
+                            <option value={fieldId} key={fieldId}>{fieldId}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="proposal-details">
+                        <span>Block: {proposal.block_id}</span>
+                        <span>Anchor: {proposal.anchor}</span>
+                        <span>Confidence: {proposal.confidence.toFixed(2)}</span>
+                      </div>
+                      <div className="inline-actions">
+                        <button className="button" type="button" onClick={() => acceptProposal(proposal)} disabled={accepted}>
+                          {accepted ? "Accepted" : "Accept"}
+                        </button>
+                        <button className="button button-secondary" type="button" onClick={() => rejectProposal(proposal)} disabled={accepted}>
+                          {decision === "rejected" ? "Ignored" : "Ignore"}
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
           <div className="form-actions">
             <button className="button button-secondary" type="button" onClick={addField}>Add field</button>
             <button className="button" type="button" disabled={saving} onClick={save}>

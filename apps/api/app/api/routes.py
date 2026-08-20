@@ -19,6 +19,7 @@ from app.api.dependencies import (
 from app.config import get_settings
 from app.db import GenerationORM, TemplateORM, get_db, utc_now
 from app.schemas import (
+    BindingStrategy,
     ConfigStatus,
     DraftRequest,
     DraftResult,
@@ -31,6 +32,11 @@ from app.schemas import (
 )
 from app.services.ai import build_ai_provider
 from app.services.ai.typhoon import AIProviderError
+from app.services.docx.candidates import (
+    detect_candidates,
+    document_block_map,
+    is_valid_anchor,
+)
 from app.services.docx.inspect import inspect_docx
 from app.services.docx.render import render_docx
 from app.services.preview.libreoffice import convert_to_pdf, find_libreoffice
@@ -43,6 +49,71 @@ router = APIRouter(prefix="/api")
 
 def _storage() -> LocalFileStorage:
     return LocalFileStorage(get_settings())
+
+
+def _validate_manifest_for_template(
+    manifest: TemplateManifest,
+    record: TemplateORM,
+    storage: LocalFileStorage,
+) -> None:
+    if manifest.template_id != record.id:
+        raise HTTPException(status_code=422, detail="Manifest template_id cannot be changed.")
+    if manifest.file_type.value != record.file_type:
+        raise HTTPException(status_code=422, detail="Manifest file_type cannot be changed.")
+
+    field_ids: set[str] = set()
+    block_ids: set[str] = set()
+    for field in manifest.fields:
+        if field.id in field_ids:
+            raise HTTPException(status_code=422, detail=f"Duplicate field id '{field.id}'.")
+        field_ids.add(field.id)
+        strategy = field.binding.strategy
+        if record.file_type == FileType.DOCX.value:
+            if strategy not in (BindingStrategy.PLACEHOLDER, BindingStrategy.DOCX_BLOCK):
+                raise HTTPException(
+                    status_code=422,
+                    detail="DOCX templates support placeholder and docx_block bindings only.",
+                )
+        elif strategy != BindingStrategy.CELL:
+            raise HTTPException(
+                status_code=422,
+                detail="XLSX templates support cell bindings only.",
+            )
+
+        if strategy != BindingStrategy.DOCX_BLOCK:
+            continue
+        if field.binding.block_id in block_ids:
+            raise HTTPException(
+                status_code=422,
+                detail=f"Duplicate or conflicting block_id '{field.binding.block_id}'.",
+            )
+        block_ids.add(field.binding.block_id or "")
+        analysis = storage.read_json(record.analysis_path)
+        if not analysis:
+            raise HTTPException(
+                status_code=409,
+                detail="Analyze the DOCX template before saving native block bindings.",
+            )
+        paragraph = document_block_map(analysis).get(field.binding.block_id or "")
+        if paragraph is None:
+            raise HTTPException(
+                status_code=422,
+                detail=f"Unknown DOCX block_id '{field.binding.block_id}'.",
+            )
+        if not is_valid_anchor(paragraph.get("text", ""), field.binding.anchor or ""):
+            raise HTTPException(
+                status_code=422,
+                detail=(
+                    f"Anchor '{field.binding.anchor}' is not valid for DOCX block "
+                    f"'{field.binding.block_id}'."
+                ),
+            )
+
+
+def _has_native_docx_bindings(manifest: TemplateManifest) -> bool:
+    return any(
+        field.binding.strategy == BindingStrategy.DOCX_BLOCK for field in manifest.fields
+    )
 
 
 @router.get("/health")
@@ -100,6 +171,12 @@ async def analyze_template(
     record = get_template_or_404(session, template_id)
     source = Path(record.source_path)
     document_map = inspect_docx(source) if record.file_type == "docx" else inspect_xlsx(source)
+    analysis_payload = document_map
+    if record.file_type == FileType.DOCX.value:
+        analysis_payload = {
+            **document_map,
+            "candidates": detect_candidates(document_map),
+        }
     try:
         provider = build_ai_provider(get_settings())
         manifest = await provider.infer_template_schema(
@@ -115,7 +192,7 @@ async def analyze_template(
     template_dir = source.parent
     analysis_path = template_dir / "analysis.json"
     manifest_path = template_dir / "manifest.json"
-    storage.write_json(analysis_path, document_map)
+    storage.write_json(analysis_path, analysis_payload)
     storage.write_json(manifest_path, manifest.model_dump(mode="json"))
     record.analysis_path = str(analysis_path)
     record.manifest_path = str(manifest_path)
@@ -146,10 +223,7 @@ def save_manifest(
 ) -> TemplateRecord:
     storage = _storage()
     record = get_template_or_404(session, template_id)
-    if manifest.template_id != template_id:
-        raise HTTPException(status_code=422, detail="Manifest template_id cannot be changed.")
-    if manifest.file_type.value != record.file_type:
-        raise HTTPException(status_code=422, detail="Manifest file_type cannot be changed.")
+    _validate_manifest_for_template(manifest, record, storage)
     manifest.original_file = Path(record.source_path).name
     manifest_path = Path(record.source_path).parent / "manifest.json"
     storage.write_json(manifest_path, manifest.model_dump(mode="json"))
@@ -202,6 +276,11 @@ def render_generation(
     storage = _storage()
     template = get_template_or_404(session, request.template_id)
     manifest = read_manifest(template, storage)
+    if template.file_type == FileType.DOCX.value and _has_native_docx_bindings(manifest):
+        raise HTTPException(
+            status_code=409,
+            detail="Native DOCX block rendering is not implemented yet.",
+        )
     generation_id = request.generation_id or str(uuid4())
     generation = session.get(GenerationORM, generation_id)
     if generation and generation.template_id != template.id:

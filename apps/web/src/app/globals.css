@@ -661,6 +661,65 @@ a:focus-visible {
   background: #fbfcfe;
 }
 
+.binding-readonly {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  overflow: hidden;
+  color: #475569;
+  background: #f8fafc;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.proposal-panel {
+  padding-top: 8px;
+  border-top: 1px solid var(--line);
+}
+
+.proposal-row {
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) 150px minmax(220px, 1.1fr) auto;
+  gap: 14px;
+  align-items: center;
+  padding: 15px;
+  border: 1px solid #bfdbfe;
+  border-radius: 13px;
+  background: #f8fbff;
+}
+
+.proposal-row.proposal-accepted {
+  border-color: #a7f3d0;
+  background: #f0fdf4;
+}
+
+.proposal-row.proposal-rejected {
+  opacity: 0.68;
+}
+
+.proposal-source,
+.proposal-details {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  font-size: 12px;
+}
+
+.proposal-source span,
+.proposal-details span {
+  overflow: hidden;
+  color: var(--muted);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.proposal-meta {
+  display: grid;
+  gap: 5px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
 .field-row-grid {
   display: grid;
   grid-template-columns: 0.75fr 1fr 1fr auto;
@@ -782,6 +841,9 @@ a:focus-visible {
   .field-row-grid {
     grid-template-columns: 1fr 1fr;
   }
+  .proposal-row {
+    grid-template-columns: 1fr 1fr;
+  }
 }
 
 @media (max-width: 640px) {
@@ -820,6 +882,9 @@ a:focus-visible {
     right: 20px;
   }
   .field-row-grid {
+    grid-template-columns: 1fr;
+  }
+  .proposal-row {
     grid-template-columns: 1fr;
   }
   .footer {
