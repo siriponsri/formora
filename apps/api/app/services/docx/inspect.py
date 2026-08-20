@@ -17,6 +17,40 @@ ALIGNMENT_NAMES = {
 }
 
 
+def _iter_table_paragraphs(table, block_id_prefix: str, table_index: int):
+    for row_index, row in enumerate(table.rows):
+        for cell_index, cell in enumerate(row.cells):
+            for paragraph_index, paragraph in enumerate(cell.paragraphs):
+                block_id = (
+                    f"{block_id_prefix}.{table_index}.row.{row_index}.cell."
+                    f"{cell_index}.p{paragraph_index}"
+                )
+                yield block_id, paragraph
+
+
+def iter_addressable_paragraphs(document):
+    """Yield paragraphs using the stable inspection block-ID semantics."""
+
+    for index, paragraph in enumerate(document.paragraphs):
+        yield f"body.p{index}", paragraph
+    for table_index, table in enumerate(document.tables):
+        yield from _iter_table_paragraphs(table, "table", table_index)
+    for section_index, section in enumerate(document.sections):
+        for story_name, story in (("header", section.header), ("footer", section.footer)):
+            prefix = f"{story_name}.{section_index}"
+            for paragraph_index, paragraph in enumerate(story.paragraphs):
+                yield f"{prefix}.p{paragraph_index}", paragraph
+            for table_index, table in enumerate(story.tables):
+                yield from _iter_table_paragraphs(table, f"{prefix}.table", table_index)
+
+
+def resolve_paragraph(document, block_id: str):
+    for candidate_id, paragraph in iter_addressable_paragraphs(document):
+        if candidate_id == block_id:
+            return paragraph
+    return None
+
+
 def _length_emu(value: Any) -> int | None:
     return int(value) if value is not None else None
 
@@ -57,10 +91,8 @@ def _table_map(table, index: int, block_id_prefix: str = "table") -> dict[str, A
                             _paragraph_map(
                                 paragraph,
                                 paragraph_index,
-                                (
-                                    f"{block_id_prefix}.{index}.row.{row_index}.cell."
-                                    f"{cell_index}.p{paragraph_index}"
-                                ),
+                                f"{block_id_prefix}.{index}.row.{row_index}.cell."
+                                f"{cell_index}.p{paragraph_index}",
                             )
                             for paragraph_index, paragraph in enumerate(cell.paragraphs)
                         ],

@@ -38,7 +38,7 @@ from app.services.docx.candidates import (
     is_valid_anchor,
 )
 from app.services.docx.inspect import inspect_docx
-from app.services.docx.render import render_docx
+from app.services.docx.render import DocxRenderError, render_docx
 from app.services.preview.libreoffice import convert_to_pdf, find_libreoffice
 from app.services.storage import LocalFileStorage
 from app.services.xlsx.inspect import inspect_xlsx
@@ -108,12 +108,6 @@ def _validate_manifest_for_template(
                     f"'{field.binding.block_id}'."
                 ),
             )
-
-
-def _has_native_docx_bindings(manifest: TemplateManifest) -> bool:
-    return any(
-        field.binding.strategy == BindingStrategy.DOCX_BLOCK for field in manifest.fields
-    )
 
 
 @router.get("/health")
@@ -276,11 +270,6 @@ def render_generation(
     storage = _storage()
     template = get_template_or_404(session, request.template_id)
     manifest = read_manifest(template, storage)
-    if template.file_type == FileType.DOCX.value and _has_native_docx_bindings(manifest):
-        raise HTTPException(
-            status_code=409,
-            detail="Native DOCX block rendering is not implemented yet.",
-        )
     generation_id = request.generation_id or str(uuid4())
     generation = session.get(GenerationORM, generation_id)
     if generation and generation.template_id != template.id:
@@ -297,7 +286,10 @@ def render_generation(
 
     output_path = settings.generated_dir / f"{generation_id}.{template.file_type}"
     if template.file_type == FileType.DOCX:
-        warnings = render_docx(template.source_path, output_path, manifest, request.content)
+        try:
+            warnings = render_docx(template.source_path, output_path, manifest, request.content)
+        except DocxRenderError as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
     else:
         warnings = render_xlsx(template.source_path, output_path, manifest, request.content)
 

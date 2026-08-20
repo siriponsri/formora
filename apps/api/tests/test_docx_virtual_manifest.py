@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+from io import BytesIO
 from pathlib import Path
 
 from docx import Document
@@ -75,7 +76,7 @@ def test_docx_analysis_exposes_proposals_without_accepting_them(tmp_path: Path) 
     assert analyzed["analysis"]["candidates"][0]["source_text"] == "เรื่อง: ขออนุมัติโครงการ"
 
 
-def test_valid_reviewed_docx_binding_is_persisted_and_native_render_is_guarded(
+def test_valid_reviewed_docx_binding_is_persisted_and_native_render_works(
     tmp_path: Path,
 ) -> None:
     source = _create_thai_candidate_docx(tmp_path / "reviewed.docx")
@@ -94,8 +95,11 @@ def test_valid_reviewed_docx_binding_is_persisted_and_native_render_is_guarded(
 
     assert saved.status_code == 200, saved.text
     assert saved.json()["manifest"]["fields"][0]["binding"]["strategy"] == "docx_block"
-    assert render.status_code == 409
-    assert render.json()["detail"] == "Native DOCX block rendering is not implemented yet."
+    assert render.status_code == 200, render.text
+    output = client.get(render.json()["download_url"])
+    assert output.status_code == 200
+    rendered = Document(BytesIO(output.content))
+    assert rendered.paragraphs[0].text == "เรื่อง: ใหม่"
     assert hashlib.sha256(source.read_bytes()).hexdigest() == before_hash
 
 
