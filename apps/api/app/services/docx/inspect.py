@@ -21,9 +21,10 @@ def _length_emu(value: Any) -> int | None:
     return int(value) if value is not None else None
 
 
-def _paragraph_map(paragraph, index: int) -> dict[str, Any]:
+def _paragraph_map(paragraph, index: int, block_id: str) -> dict[str, Any]:
     return {
         "index": index,
+        "block_id": block_id,
         "text": paragraph.text,
         "style": paragraph.style.name if paragraph.style else None,
         "alignment": ALIGNMENT_NAMES.get(paragraph.alignment),
@@ -41,7 +42,7 @@ def _paragraph_map(paragraph, index: int) -> dict[str, Any]:
     }
 
 
-def _table_map(table, index: int) -> dict[str, Any]:
+def _table_map(table, index: int, block_id_prefix: str = "table") -> dict[str, Any]:
     return {
         "index": index,
         "style": table.style.name if table.style else None,
@@ -53,7 +54,14 @@ def _table_map(table, index: int) -> dict[str, Any]:
                         "index": cell_index,
                         "text": cell.text,
                         "paragraphs": [
-                            _paragraph_map(paragraph, paragraph_index)
+                            _paragraph_map(
+                                paragraph,
+                                paragraph_index,
+                                (
+                                    f"{block_id_prefix}.{index}.row.{row_index}.cell."
+                                    f"{cell_index}.p{paragraph_index}"
+                                ),
+                            )
                             for paragraph_index, paragraph in enumerate(cell.paragraphs)
                         ],
                     }
@@ -65,12 +73,20 @@ def _table_map(table, index: int) -> dict[str, Any]:
     }
 
 
-def _story_map(story) -> dict[str, Any]:
+def _story_map(story, block_id_prefix: str) -> dict[str, Any]:
     return {
         "paragraphs": [
-            _paragraph_map(paragraph, index) for index, paragraph in enumerate(story.paragraphs)
+            _paragraph_map(
+                paragraph,
+                index,
+                f"{block_id_prefix}.p{index}",
+            )
+            for index, paragraph in enumerate(story.paragraphs)
         ],
-        "tables": [_table_map(table, index) for index, table in enumerate(story.tables)],
+        "tables": [
+            _table_map(table, index, f"{block_id_prefix}.table")
+            for index, table in enumerate(story.tables)
+        ],
     }
 
 
@@ -117,17 +133,24 @@ def inspect_docx(path: str | Path) -> dict[str, Any]:
                 "footer_distance_emu": _length_emu(section.footer_distance),
             }
         )
-        headers.append({"section_index": index, **_story_map(section.header)})
-        footers.append({"section_index": index, **_story_map(section.footer)})
+        headers.append(
+            {"section_index": index, **_story_map(section.header, f"header.{index}")}
+        )
+        footers.append(
+            {"section_index": index, **_story_map(section.footer, f"footer.{index}")}
+        )
 
     return {
         "file_type": "docx",
         "filename": source.name,
         "page": {"sections": len(document.sections)},
         "paragraphs": [
-            _paragraph_map(paragraph, index) for index, paragraph in enumerate(document.paragraphs)
+            _paragraph_map(paragraph, index, f"body.p{index}")
+            for index, paragraph in enumerate(document.paragraphs)
         ],
-        "tables": [_table_map(table, index) for index, table in enumerate(document.tables)],
+        "tables": [
+            _table_map(table, index) for index, table in enumerate(document.tables)
+        ],
         "sections": sections,
         "headers": headers,
         "footers": footers,
